@@ -134,21 +134,21 @@ def update_user():
     new_password = data.get('password')
     if not new_name : 
         if not new_password:
-            #  khong khong 
+         
             state = f"""UPDATE social_app.user SET name =('{name}'),bio =('{new_bio}'),image=('{new_image}'),password = ('{password}') 
             WHERE username=('{username}')"""
             execute_sql1(state)
-        # khong co 
+      
         else :
             state = f"""UPDATE social_app.user SET name =('{name}'),bio =('{new_bio}'),image=('{new_image}'),password = ('{new_password}') 
             WHERE username=('{username}')"""
             execute_sql1(state)
-    # co co 
+   
     else :
         state = f"""UPDATE social_app.user SET name =('{new_name}'),bio =('{new_bio}'),image=('{new_image}'),password = ('{new_password}') 
         WHERE username=('{username}')"""
         execute_sql1(state)
-    # co khong
+ 
     if new_name :
         if not new_password : 
             state = f"""UPDATE social_app.user SET name =('{new_name}'),bio =('{new_bio}'),image=('{new_image}'),password = ('{password}') 
@@ -186,7 +186,7 @@ def get_profile_current_user():
             social_app.article AS article
             LEFT JOIN social_app.favorited_article ON favorited_article.id_article = article.ID 
         WHERE 
-            article.id = ('{id}')
+            article.id_author = ('{id}')
         GROUP BY
             article.ID,
             article.title,
@@ -197,7 +197,56 @@ def get_profile_current_user():
     return {"profile" :result1,
         "articles":result}
 
-     
 
+@user.route(Endpoint.PROFILE1, methods=[HttpMethod.GET])
+def get_profile_user_with_condition():
+    token = request.headers.get("Authorization")
+    if not token :
+        return jsonify({"message":"check your token"})
+    jwt_token = decode(token) 
+    username = jwt_token['username']
+    if not username : 
+        return jsonify({'message':'check your token'})
+    result =  respond_para()
+    for i in result : 
+        state1= f"""SELECT * FROM social_app.user WHERE id = ('{i}')"""
+        result1 = execute_sql(state1)
+        del result1[0]['username']
+        del result1[0]['password']
+        del result1[0]['id']
+        state = f"""SELECT
+        article.ID,
+        article.title,
+        article.body,
+        article.created_at,
+        article.image,
+        COUNT ( favorited_article.id_article ) AS favorites_count 
+        FROM
+            social_app.article AS article
+            LEFT JOIN social_app.favorited_article ON favorited_article.id_article = article.ID 
+        WHERE 
+            article.id_author = ('{i}')
+        GROUP BY
+            article.ID,
+            article.title,
+            article.body,
+            article.created_at"""
+    
+        result = execute_sql(state)
+        return {"profile" :result1,
+            "articles":result}
+def respond_para():
+    get_by_name = request.args.get('name')
+    state = "SELECT name,id FROM social_app.user "
+    result = execute_sql(state)
+    dic = {}
+    lit = []
+    for i in result : 
+        if get_by_name in i['name'] :
+            dic[i['name']] = i['id'] 
+    for j in dic :
+        lit.append(j['name'])
+    return lit 
 
+    
 

@@ -2,7 +2,7 @@ class Endpoint :
     # get all article and ADD article 
     ARTICLE ="/api/articles"
     
-    # get one article 
+    # get one article and delete article
     ARTICLE1 = "/api/articles/<int:id_article>"
     
     # add favorites and unfavorites article 
@@ -20,6 +20,11 @@ class Endpoint :
     # add nested_comment to comment 
     ARTICLE6 = "/api/articles/<int:id_article>/<int:id_comment>/nested_comment"
 
+    # delete comment 
+    ARTICLE7 = "/api/articles/<int:id_article>/comments/<int:id_comment>"
+
+    # delete nested comment 
+    ARTICLE8 = "/api/articles/<int:id_article>/comments/nested_comment/<int:id_nested_comment>"
 
 
     # get current user and register user and update user 
@@ -30,6 +35,9 @@ class Endpoint :
 
     # get profile user 
     PROFILE = "/api/profiles"
+
+    # get friend profile with condition
+    PROFILE1 = "/api/another_profiles"
 
     # get comments of one article
     COMMENTS = "/api/articles/<int:id_article>/comments"

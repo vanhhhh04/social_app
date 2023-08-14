@@ -7,3 +7,4 @@ def encode(user_credentials ) :
 def decode(encode) : 
     decode_jwt = jwt.decode(encode,"secret",algorithms=['HS256'])
     return decode_jwt
+
