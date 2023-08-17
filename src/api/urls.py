@@ -35,6 +35,9 @@ class Endpoint :
 
     # notification 
     USER2 = "/api/notification"
+
+    # add message 
+    USER3 = "/api/message/<int:id_user>"
     
     # get profile user 
     PROFILE = "/api/profiles"

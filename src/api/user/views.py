@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from src.api.urls import Endpoint
 from src.api import HttpMethod
+from datetime import datetime
 from src.common.utils.alchemy import execute_sql, execute_sql1
 from src.common.utils.social_jwt import encode, decode
 user = Blueprint("user", __name__)
@@ -194,7 +195,7 @@ def get_profile_current_user():
     return {"profile": result1,
             "articles": result}
 
-# chưa được tối ưu lắm
+
 
 
 @user.route(Endpoint.PROFILE1, methods=[HttpMethod.GET])
@@ -250,8 +251,7 @@ def respond_para():
     return lit
 
 
-
-@user.route(Endpoint.USER2 ,methods =[HttpMethod.GET])
+@user.route(Endpoint.USER2, methods=[HttpMethod.GET])
 def get_notification():
     token = request.headers.get("Authorization")
     if not token:
@@ -260,32 +260,57 @@ def get_notification():
     username = jwt_token['username']
     if not username:
         return jsonify({'message': 'check your token'})
-def new_fv_article():
-    state =f"""SELECT 
+    state = f"SELECT id FROM social_app.user WHERE username = '{username}'"
+    result = execute_sql(state)
+    id = result[0]['id']
+    result1 = new_fv_article(id)
+    result2 = new_comment(id)
+    result3 = new_fv_cm(id)
+    result4 = new_nested_cm(id)
+    result5 = new_fv_nested_cm(id)
+    return {"new_fv_article": result1,
+            "new_comment": result2,
+            "new_fv_cm": result3,
+            "new_nested_cm": result4,
+            "new_fv_nested_cm": result5}
+
+
+def new_fv_article(id):
+    state = f"""SELECT 
 	id_user,
 	id_article,
 	id 
 	FROM social_app.favorited_article WHERE social_app.favorited_article.id IN (SELECT 
 										id_new_fv_ar 
-			FROM social_app.notification WHERE id_user = '3')"""
-    
-def new_comment():
+			FROM social_app.notification WHERE id_user = '{id}')"""
+    result = execute_sql(state)
+    return result
+
+
+def new_comment(id):
     state = f"""SELECT 
 	id ,
 	id_article,
 	id_user ,
 	body ,
 	created_at
-	FROM social_app.comments WHERE social_app.comments.id in (SELECT id_new_cm FROM social_app.notification WHERE id_user = '3')""" 
+	FROM social_app.comments WHERE social_app.comments.id in (SELECT id_new_cm FROM social_app.notification WHERE id_user = '{id}')"""
     result = execute_sql(state)
-def new_fv_cm():
+    return result
+
+
+def new_fv_cm(id):
     state = f"""SELECT 
 	id_comment ,
 	id_user 
 	FROM social_app.favorited_comments WHERE social_app.favorited_comments.id 
-    in (SELECT id_new_cm FROM social_app.notification WHERE id_user = '3') 
+    in (SELECT id_new_cm FROM social_app.notification WHERE id_user = '{id}') 
     """
-def new_nested_cm():
+    result = execute_sql(state)
+    return result
+
+
+def new_nested_cm(id):
     state = f"""SELECT 
 	id,
 	id_big,
@@ -295,15 +320,59 @@ def new_nested_cm():
 	created_at 
 	FROM social_app.nested_comment WHERE social_app.nested_comment.id IN (SELECT 
 										id_new_nested_cm  
-			FROM social_app.notification WHERE id_user = '')"""
+			FROM social_app.notification WHERE id_user = '{id}')"""
+    result = execute_sql(state)
+    return result
 
-def new_fv_nested_cm():
-    state =f"""SELECT 
+
+def new_fv_nested_cm(id):
+    state = f"""SELECT 
 	id_nested_comment,
 	id_user,
 	id 
 	FROM social_app.favorited_nested_comments WHERE social_app.favorited_nested_comments.id IN (SELECT 
 										id_new_fv_nested_cm  
-			FROM social_app.notification WHERE id_user = '3') """
-    
-# respond nhu nao ?
+			FROM social_app.notification WHERE id_user = '{id}') """
+    result = execute_sql(state)
+    return result
+
+
+@user.route(Endpoint.USER3, methods=[HttpMethod.POST])
+def add_new_message(id_user):
+    token = request.headers.get("Authorization")
+    if not token : 
+        return jsonify({'message':'check your headers'})
+    token = decode(token)
+    username = token['username'] 
+    if not username : 
+        return jsonify({'message':'check your token'})
+    state = f"""SELECT id FROM social_app.user WHERE username = '{username}'"""
+    id = execute_sql(state)
+    id = id[0]['id']
+    data = request.get_json()
+    data = data.get('message', {})
+    body = data.get('body')
+    date = datetime.now()
+    state = f"""INSERT INTO social_app.message(id_author,id_user,created_at,body) VALUES('{id}','{id_user}','{date}','{body}')"""
+    execute_sql1(state)
+    state = f"""SELECT body FROM social_app.message WHERE id_author='{id}' AND id_user='{id_user}' AND created_at = '{date}'"""
+    result = execute_sql(state)
+    return result
+
+
+
+@user.route(Endpoint.USER3, methods=[HttpMethod.GET])
+def get_all_message(id_user):
+    token = request.headers.get("Authorization")
+    if not token : 
+        return jsonify({'message':'check your headers'})
+    token = decode(token)
+    username = token['username'] 
+    if not username : 
+        return jsonify({'message':'check your token'})
+    state = f"""SELECT id FROM social_app.user WHERE username = '{username}'"""
+    id = execute_sql(state)
+    id = id[0]['id']
+    state = f"""SELECT * FROM social_app.message WHERE id_author ='{id}' AND id_user ='{id_user}'"""
+    result = execute_sql(state)
+    return {"message":result}
