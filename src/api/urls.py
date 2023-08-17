@@ -17,7 +17,7 @@ class Endpoint :
     # add comment to article 
     ARTICLE5 = "/api/articles/<int:id_article>/comments"
 
-    # add nested_comment to comment 
+    # add nested_comment to comment and get all nested comment from single big comment
     ARTICLE6 = "/api/articles/<int:id_article>/<int:id_comment>/nested_comment"
 
     # delete comment 
@@ -33,6 +33,9 @@ class Endpoint :
     # login user
     USER1 = "/api/user/login"
 
+    # notification 
+    USER2 = "/api/notification"
+    
     # get profile user 
     PROFILE = "/api/profiles"
 

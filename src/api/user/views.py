@@ -1,127 +1,125 @@
-from flask import Blueprint,request,jsonify
+from flask import Blueprint, request, jsonify
 from src.api.urls import Endpoint
 from src.api import HttpMethod
-from src.common.utils.alchemy import execute_sql,execute_sql1
-from src.common.utils.social_jwt import encode,decode
-user = Blueprint("user",__name__)
-
+from src.common.utils.alchemy import execute_sql, execute_sql1
+from src.common.utils.social_jwt import encode, decode
+user = Blueprint("user", __name__)
 
 
 @user.route(Endpoint.USER, methods=[HttpMethod.POST])
-def sign_up() :
+def sign_up():
     data = request.get_json()
     name = data.get("user", {}).get("name")
     username = data.get("user", {}).get("username")
-    password = data.get("user",{}).get("password")
-    state =f"""INSERT INTO social_app.user(name,username,password) VALUES ('{name}','{username}','{password}')"""
-    if check_username(username) :
-        return jsonify({"message":"username was existed"})
-    else :
+    password = data.get("user", {}).get("password")
+    state = f"""INSERT INTO social_app.user(name,username,password) VALUES ('{name}','{username}','{password}')"""
+    if check_username(username):
+        return jsonify({"message": "username was existed"})
+    else:
         execute_sql1(state)
-        return {"user":{
-                "name" : f"{name}",
-                "username" : f"{username}",
-                "password" : f"{password}",
-                "bio" : None ,
-                "image" : None,
+        return {"user": {
+                "name": f"{name}",
+                "username": f"{username}",
+                "password": f"{password}",
+                "bio": None,
+                "image": None,
                 }
                 }
 
 
-def check_username(username) :
+def check_username(username):
     state = f"""SELECT username FROM social_app.user WHERE username = ('{username}')"""
-    result = execute_sql(state) 
-    if result : 
-        return True 
-    else : 
-        return False 
-
+    result = execute_sql(state)
+    if result:
+        return True
+    else:
+        return False
 
 
 @user.route(Endpoint.USER1, methods=[HttpMethod.POST])
 def login():
     data = request.get_json()
-    data = data.get("user",{})
-    username = data.get("username") 
+    data = data.get("user", {})
+    username = data.get("username")
     password = data.get("password")
-    user_credentials = {"username":username}
+    user_credentials = {"username": username}
     if check_username(username):
-        if check_password(username,password) :
-            token = encode(user_credentials) 
+        if check_password(username, password):
+            token = encode(user_credentials)
             state = f"""SELECT name,bio,image FROM social_app.user WHERE username =('{username}')"""
             result = execute_sql(state)
             name = result[0]['name']
             bio = result[0]['bio']
             image = result[0]['image']
-            return {"user" : {
-                    "name" :f"{name}",
-                    "token":f"{token}" ,
-                    "username":f"{username}",
-                    "password":f"{password}",
-                    "bio" :f"{bio}",
-                    "image":f"{image}"
-                            }
+            return {"user": {
+                    "name": f"{name}",
+                    "token": f"{token}",
+                    "username": f"{username}",
+                    "password": f"{password}",
+                    "bio": f"{bio}",
+                    "image": f"{image}"
                     }
-        else :
-            return jsonify({"message":"check your password again"})
-    else : 
-        return jsonify({"message":"user did not existed"})
+                    }
+        else:
+            return jsonify({"message": "check your password again"})
+    else:
+        return jsonify({"message": "user did not existed"})
 
 
 def check_username(username):
     state = f"""SELECT username FROM social_app.user WHERE username = ('{username}')"""
-    result = execute_sql(state) 
-    if result :
-        return True 
-    else :
-        return False 
+    result = execute_sql(state)
+    if result:
+        return True
+    else:
+        return False
 
 
-def check_password(username,password):
-    state =f"""SELECT password FROM social_app.user WHERE username = ('{username}')"""
-    result = execute_sql(state) 
+def check_password(username, password):
+    state = f"""SELECT password FROM social_app.user WHERE username = ('{username}')"""
+    result = execute_sql(state)
     result = result[0]['password']
-    if password == result :
-        return True 
-    else : 
-        return False 
+    if password == result:
+        return True
+    else:
+        return False
 
 
-@user.route(Endpoint.USER, methods=[HttpMethod.GET]) 
+@user.route(Endpoint.USER, methods=[HttpMethod.GET])
 def get_current_user():
     token = request.headers.get("Authorization")
-    if not token :
-        return jsonify({"message":"check your token"})
-    jwt_token = decode(token) 
+    if not token:
+        return jsonify({"message": "check your token"})
+    jwt_token = decode(token)
     username = jwt_token['username']
-    if username : 
+    if username:
         state = f"""SELECT * FROM social_app.user WHERE username =('{username}')"""
         result = execute_sql(state)
         name = result[0]['name']
         password = result[0]['password']
         bio = result[0]['bio']
         image = result[0]['image']
-        return {"user" : {
-                "name" :f"{name}",
-                "token":f"{token}" ,
-                "username":f"{username}",
-                "password":f"{password}",
-                "bio" :f"{bio}",
-                "image":f"{image}"
-                        }
+        return {"user": {
+                "name": f"{name}",
+                "token": f"{token}",
+                "username": f"{username}",
+                "password": f"{password}",
+                "bio": f"{bio}",
+                "image": f"{image}"
                 }
-    return jsonify({"message":"check your token"})
+                }
+    return jsonify({"message": "check your token"})
 
 
 @user.route(Endpoint.USER, methods=[HttpMethod.PUT])
 def update_user():
     token = request.headers.get("Authorization")
-    if not token :
-        return jsonify({"message":"check your token"})
-    jwt_token = decode(token) 
+    if not token:
+        return jsonify({"message": "check your token"})
+    jwt_token = decode(token)
     username = jwt_token['username']
-    if not username : 
-        return jsonify({'message':'check your token'})
+    if not username:
+        return jsonify({'message': 'check your token'})
     state = f"""SELECT * FROM social_app.user WHERE username =('{username}')"""
     result = execute_sql(state)
     name = result[0]['name']
@@ -132,43 +130,42 @@ def update_user():
     new_bio = data.get('bio')
     new_image = data.get('image')
     new_password = data.get('password')
-    if not new_name : 
+    if not new_name:
         if not new_password:
-         
+
             state = f"""UPDATE social_app.user SET name =('{name}'),bio =('{new_bio}'),image=('{new_image}'),password = ('{password}') 
             WHERE username=('{username}')"""
             execute_sql1(state)
-      
-        else :
+
+        else:
             state = f"""UPDATE social_app.user SET name =('{name}'),bio =('{new_bio}'),image=('{new_image}'),password = ('{new_password}') 
             WHERE username=('{username}')"""
             execute_sql1(state)
-   
-    else :
+
+    else:
         state = f"""UPDATE social_app.user SET name =('{new_name}'),bio =('{new_bio}'),image=('{new_image}'),password = ('{new_password}') 
         WHERE username=('{username}')"""
         execute_sql1(state)
- 
-    if new_name :
-        if not new_password : 
+
+    if new_name:
+        if not new_password:
             state = f"""UPDATE social_app.user SET name =('{new_name}'),bio =('{new_bio}'),image=('{new_image}'),password = ('{password}') 
             WHERE username=('{username}')"""
             execute_sql1(state)
     execute_sql1(state)
     result = get_current_user()
-    return result 
-
+    return result
 
 
 @user.route(Endpoint.PROFILE, methods=[HttpMethod.GET])
 def get_profile_current_user():
     token = request.headers.get("Authorization")
-    if not token :
-        return jsonify({"message":"check your token"})
-    jwt_token = decode(token) 
+    if not token:
+        return jsonify({"message": "check your token"})
+    jwt_token = decode(token)
     username = jwt_token['username']
-    if not username : 
-        return jsonify({'message':'check your token'})
+    if not username:
+        return jsonify({'message': 'check your token'})
     state = f"""SELECT * FROM social_app.user WHERE username = ('{username}')"""
     result1 = execute_sql(state)
     id = result1[0]['id']
@@ -192,24 +189,26 @@ def get_profile_current_user():
             article.title,
             article.body,
             article.created_at"""
-    
+
     result = execute_sql(state)
-    return {"profile" :result1,
-        "articles":result}
+    return {"profile": result1,
+            "articles": result}
+
+# chưa được tối ưu lắm
 
 
 @user.route(Endpoint.PROFILE1, methods=[HttpMethod.GET])
 def get_profile_user_with_condition():
     token = request.headers.get("Authorization")
-    if not token :
-        return jsonify({"message":"check your token"})
-    jwt_token = decode(token) 
+    if not token:
+        return jsonify({"message": "check your token"})
+    jwt_token = decode(token)
     username = jwt_token['username']
-    if not username : 
-        return jsonify({'message':'check your token'})
-    result =  respond_para()
-    for i in result : 
-        state1= f"""SELECT * FROM social_app.user WHERE id = ('{i}')"""
+    if not username:
+        return jsonify({'message': 'check your token'})
+    result = respond_para()
+    for i in result:
+        state1 = f"""SELECT * FROM social_app.user WHERE id = ('{i}')"""
         result1 = execute_sql(state1)
         del result1[0]['username']
         del result1[0]['password']
@@ -231,22 +230,80 @@ def get_profile_user_with_condition():
             article.title,
             article.body,
             article.created_at"""
-    
+
         result = execute_sql(state)
-        return {"profile" :result1,
-            "articles":result}
+        return {"profile": result1,
+                "articles": result}
+
+
 def respond_para():
     get_by_name = request.args.get('name')
     state = "SELECT name,id FROM social_app.user "
     result = execute_sql(state)
     dic = {}
     lit = []
-    for i in result : 
-        if get_by_name in i['name'] :
-            dic[i['name']] = i['id'] 
-    for j in dic :
-        lit.append(j['name'])
-    return lit 
+    for i in result:
+        if get_by_name in i['name']:
+            dic[i['name']] = i['id']
+    for j in dic.values():
+        lit.append(j)
+    return lit
 
+
+
+@user.route(Endpoint.USER2 ,methods =[HttpMethod.GET])
+def get_notification():
+    token = request.headers.get("Authorization")
+    if not token:
+        return jsonify({"message": "check your token"})
+    jwt_token = decode(token)
+    username = jwt_token['username']
+    if not username:
+        return jsonify({'message': 'check your token'})
+def new_fv_article():
+    state =f"""SELECT 
+	id_user,
+	id_article,
+	id 
+	FROM social_app.favorited_article WHERE social_app.favorited_article.id IN (SELECT 
+										id_new_fv_ar 
+			FROM social_app.notification WHERE id_user = '3')"""
     
+def new_comment():
+    state = f"""SELECT 
+	id ,
+	id_article,
+	id_user ,
+	body ,
+	created_at
+	FROM social_app.comments WHERE social_app.comments.id in (SELECT id_new_cm FROM social_app.notification WHERE id_user = '3')""" 
+    result = execute_sql(state)
+def new_fv_cm():
+    state = f"""SELECT 
+	id_comment ,
+	id_user 
+	FROM social_app.favorited_comments WHERE social_app.favorited_comments.id 
+    in (SELECT id_new_cm FROM social_app.notification WHERE id_user = '3') 
+    """
+def new_nested_cm():
+    state = f"""SELECT 
+	id,
+	id_big,
+	id_user,
+	id_article,
+	body,
+	created_at 
+	FROM social_app.nested_comment WHERE social_app.nested_comment.id IN (SELECT 
+										id_new_nested_cm  
+			FROM social_app.notification WHERE id_user = '')"""
 
+def new_fv_nested_cm():
+    state =f"""SELECT 
+	id_nested_comment,
+	id_user,
+	id 
+	FROM social_app.favorited_nested_comments WHERE social_app.favorited_nested_comments.id IN (SELECT 
+										id_new_fv_nested_cm  
+			FROM social_app.notification WHERE id_user = '3') """
+    
+# respond nhu nao ?
