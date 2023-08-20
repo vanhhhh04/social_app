@@ -376,3 +376,5 @@ def get_all_message(id_user):
     state = f"""SELECT * FROM social_app.message WHERE id_author ='{id}' AND id_user ='{id_user}'"""
     result = execute_sql(state)
     return {"message":result}
+
+
