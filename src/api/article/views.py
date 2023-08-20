@@ -4,6 +4,8 @@ from src.common.utils.alchemy import execute_sql, execute_sql1
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from src.common.utils.social_jwt import decode, encode
+from src.api.article.services import ArticleServices
+from src.api.user.services import UserServices
 article = Blueprint("article", __name__)
 
 
@@ -527,16 +529,11 @@ def unfavorite_nested_comment(id_nested_comment):
 
 @article.route(Endpoint.ARTICLE, methods=[HttpMethod.POST])
 def add_article():
+    
     token = request.headers.get("Authorization")
-    if not token:
-        return jsonify({"message": "check your token"})
-    jwt_token = decode(token)
-    username = jwt_token['username']
-    if not username:
-        return jsonify({'message': 'check your token'})
-    state = f"SELECT id FROM social_app.user WHERE username=('{username}')"
-    result = execute_sql(state)
-    id_author = result[0]['id']
+    user_services = UserServices()
+    id_author = user_services.get_user_id_from_token(token)
+    
     data = request.get_json()
     data = data.get("article", {})
     title = data.get('title')
